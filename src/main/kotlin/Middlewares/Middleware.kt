@@ -30,13 +30,17 @@ class Middleware {
             return false
         }
     }
-    suspend fun requestLogging (it: Context, endpoint:String = "") {
+    suspend fun requestLogging (it: Context) {
             val col = MongoDb.getCollection("request_logs")
             val currentDateTime = DateTime.now(DateTimeZone.forID("Asia/Manila"))
-            val bodyMap = JSONObject(it.body()).toMap()
+            val bodyMap = if (it.method() == "POST") {
+                JSONObject(it.body()).toMap()
+            } else {
+                JSONObject(mapOf("Items" to "None")).toMap()
+            }
             val request = Document(
                 mapOf(
-                    "endpoint" to endpoint,
+                    "endpoint" to it.fullUrl(),
                     "time" to currentDateTime.toString(),
                     "body" to Document(bodyMap),
                     "ip" to it.ip()

@@ -5,6 +5,7 @@ import Services.PortfolioService
 import Services.TestServices
 import io.javalin.apibuilder.ApiBuilder
 import io.javalin.http.Context
+import io.javalin.http.HttpResponseException
 import org.json.JSONObject
 
 class ServiceRoutes {

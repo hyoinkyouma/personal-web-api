@@ -6,6 +6,8 @@ import dbutils.Auth
 import io.javalin.Javalin
 import io.github.cdimascio.dotenv.dotenv
 import io.javalin.apibuilder.ApiBuilder
+import io.javalin.http.HttpResponseException
+import kong.unirest.Unirest
 import org.jetbrains.exposed.sql.Database
 import org.jetbrains.exposed.sql.SchemaUtils
 import org.jetbrains.exposed.sql.transactions.transaction
@@ -31,15 +33,29 @@ class App {
             }
         }
 
+        private fun initializeUnirest() {
+            Unirest.config()
+                .verifySsl(false)
+                .socketTimeout(600000)
+                .connectTimeout(600000)
+                .concurrency(2000, 2000)
+        }
+
         private fun initJavalin () {
             val javalin: Javalin = Javalin.create { config ->
                 config.maxRequestSize = 122880L
                 config.enableCorsForAllOrigins()
             }.start(Port)
             javalin.routes {
-                ApiBuilder.path("/v1") {
-                    ServiceRoutes().start()
 
+                ApiBuilder.path("/v1") {
+                    ApiBuilder.before {
+                        if (!it.basicAuthCredentialsExist()) {
+                            it.header("WWW-Authenticate", "Basic realm=\"User Visible Realm\", charset=\"UTF-8\"")
+                            throw HttpResponseException(401, "Login required")
+                        }
+                    }
+                    ServiceRoutes().start()
                 }
             }
         }
@@ -49,10 +65,10 @@ class App {
 
 
     @JvmStatic fun main(args: Array<String>) {
-        initDb()
         initMongo()
         initJavalin()
-
+        initializeUnirest()
+        initDb()
     }
     }
 }
