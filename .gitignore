@@ -1,0 +1,17 @@
+# Ignore Gradle project-specific cache directory
+.gradle
+
+# Ignore Gradle build output directory
+build
+
+# Ignore Dotenv file
+.env
+
+# Ignore .idea for fresh setup when importing the project
+.idea
+
+# Ignore .DS_Store
+.DS_Store
+
+# Ignore generated checklist in temp folder
+/temp/
