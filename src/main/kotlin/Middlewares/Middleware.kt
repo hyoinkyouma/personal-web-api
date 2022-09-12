@@ -33,11 +33,12 @@ class Middleware {
     suspend fun requestLogging (it: Context) {
             val col = MongoDb.getCollection("request_logs")
             val currentDateTime = DateTime.now(DateTimeZone.forID("Asia/Manila"))
-            val bodyMap = if (it.method() == "POST") {
-                JSONObject(it.body()).toMap()
-            } else {
-                JSONObject(mapOf("Items" to "None")).toMap()
-            }
+            val bodyMap = JSONObject(
+                if (it.body().isNullOrBlank()) {
+                    it.body()
+                } else mapOf("items" to "none")
+            ).toMap()
+
             val request = Document(
                 mapOf(
                     "endpoint" to it.fullUrl(),

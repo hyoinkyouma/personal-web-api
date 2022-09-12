@@ -32,26 +32,14 @@ class PortfolioService {
     }
 
     fun sendPortfolio(it:Context):String {
-        portfolioCoroutineHandler.launch {
-            Middleware().requestLogging(it)
-        }
-        val jsonBody = JSONObject(it.body())
-        var isValid = false
-        try {
-        for (it in jsonBody.toMap()){
-            if (it.key != "desc") {
-                isValid = checkUrl(it.value as String).isSuccess
-            }
-            if (!isValid) break
-        }} catch (e:Throwable) {
-            isValid = false
-            e.printStackTrace()
-        }
 
-        if (it.body().isNotEmpty() && isValid) {
+        val jsonBody = JSONObject(it.body())
+
+        if (it.body().isNotEmpty()) {
             val col = MongoDB.getCollection("portfolio")
 
             portfolioCoroutineHandler.launch {
+                Middleware().requestLogging(it)
                 val filterDocMap = Document(mapOf("item" to "portfolio"))
                 val docMap = JSONObject(col.findOne(filterDocMap))
                     .getJSONObject("value")
@@ -68,8 +56,27 @@ class PortfolioService {
                 col.replaceOne(filterDocMap, Document(mapOf("item" to "portfolio", "value" to Document(sortedMap))))
             }
         }
-        return JSONObject(mapOf("Message" to if (isValid) "Success" else "Failed Get URL Resources")).toString()
+        return JSONObject(mapOf("Message" to "Success")).toString()
     }
 
-    private fun checkUrl (url:String) = Unirest.get(url).asString()
+    fun removePorfolio(it:Context):String {
+        val title = JSONObject(it.body()).optString("title")
+
+        portfolioCoroutineHandler.launch {
+            Middleware().requestLogging(it)
+            val filter = Document(mapOf("item" to "portfolio"))
+            val list = JSONObject(mongoDb.getCollection("portfolio")
+                .findOne(filter))
+                .optJSONObject("value")
+                .toMap()
+                .toMutableMap()
+            list.remove(title)
+            println(list)
+            list.toSortedMap()
+            mongoDb.getCollection("portfolio")
+                .replaceOne(filter, Document(mapOf("item" to "portfolio", "value" to Document(list))) )
+        }
+        return JSONObject(mapOf("Status" to "Request Sent")).toString()
+    }
+
 }

@@ -29,6 +29,12 @@ class ServiceRoutes {
             else respondFailed(it)
         }
 
+        ApiBuilder.post("/removePortfolio") {
+            val isValid = MW.verify(it)
+            if (isValid) it.result(portfolioService.removePorfolio(it))
+            else respondFailed(it)
+        }
+
     }
 
     private fun respondFailed(it:Context) {

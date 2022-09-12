@@ -6,6 +6,7 @@ import dbutils.Auth
 import io.javalin.Javalin
 import io.github.cdimascio.dotenv.dotenv
 import io.javalin.apibuilder.ApiBuilder
+import io.javalin.core.util.Header
 import io.javalin.http.HttpResponseException
 import kong.unirest.Unirest
 import org.jetbrains.exposed.sql.Database
@@ -17,12 +18,12 @@ class App {
 
     companion object {
         val dotenv = dotenv()
-        private  val Port:Int = dotenv.get("PORT").toInt()
+        private  val Port:Int = System.getenv("PORT")?.toInt() ?: dotenv.get("PORT").toInt()
         lateinit var mongoDb:MongoDatabase
         lateinit var db: Database
 
         private fun initMongo () {
-            mongoDb = KMongo.createClient(dotenv.get("MongoString")).getDatabase("personal")
+            mongoDb = KMongo.createClient(System.getenv("MongoString") ?: dotenv.get("MongoString")).getDatabase("personal")
         }
 
         private fun initDb () {
@@ -42,18 +43,25 @@ class App {
         }
 
         private fun initJavalin () {
-            val javalin: Javalin = Javalin.create { config ->
-                config.maxRequestSize = 122880L
-                config.enableCorsForAllOrigins()
+            val javalin: Javalin = Javalin.create().apply {
+                this._conf.enableCorsForAllOrigins()
+                this._conf.enableHttpAllowedMethodsOnRoutes()
+                this._conf.enableDevLogging()
+
             }.start(Port)
             javalin.routes {
 
                 ApiBuilder.path("/v1") {
                     ApiBuilder.before {
-                        if (!it.basicAuthCredentialsExist()) {
-                            it.header("WWW-Authenticate", "Basic realm=\"User Visible Realm\", charset=\"UTF-8\"")
-                            throw HttpResponseException(401, "Login required")
-                        }
+                        it.header(Header.ACCESS_CONTROL_ALLOW_HEADERS, "Access-Control-Allow-Headers, Authorization, Origin,Accept, X-Requested-With, Content-Type, Access-Control-Request-Method, Access-Control-Request-Headers")
+
+                        /*if (!it.basicAuthCredentialsExist()) {
+                              it.header("WWW-Authenticate", "Basic realm=\"User Visible Realm\", charset=\"UTF-8\"")
+                              throw HttpResponseException(401, "Login required")
+                          }*/
+                        it.header(Header.ACCESS_CONTROL_ALLOW_ORIGIN, "*")
+                        it.header(Header.ACCESS_CONTROL_ALLOW_CREDENTIALS, "true")
+                        it.header(Header.ACCESS_CONTROL_ALLOW_METHODS, "GET, POST")
                     }
                     ServiceRoutes().start()
                 }
