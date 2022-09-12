@@ -17,16 +17,17 @@ import org.litote.kmongo.KMongo
 class App {
 
     companion object {
-        val dotenv = dotenv()
-        private  val Port:Int = System.getenv("PORT")?.toInt() ?: dotenv.get("PORT").toInt()
+        val dotenv = try {dotenv()} catch (e:Throwable) {null}
+        private  val Port:Int = System.getenv("PORT")?.toInt() ?: dotenv!!.get("PORT").toInt()
         lateinit var mongoDb:MongoDatabase
         lateinit var db: Database
 
         private fun initMongo () {
-            mongoDb = KMongo.createClient(System.getenv("MongoString") ?: dotenv.get("MongoString")).getDatabase("personal")
+            mongoDb = KMongo.createClient(System.getenv("MongoString") ?: dotenv!!.get("MongoString")).getDatabase("personal")
         }
 
         private fun initDb () {
+            println(System.getenv("PORT") ?: "None")
             DBConnection.init()
             this.db = Database.connect(DBConnection.db)
             transaction {
@@ -77,6 +78,7 @@ class App {
         initJavalin()
         initializeUnirest()
         initDb()
+
     }
     }
 }
