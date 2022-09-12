@@ -25,7 +25,7 @@ dependencies {
     implementation ("com.zaxxer:HikariCP:5.0.1")
 
     //unirest
-    implementation("com.konghq:unirest-java:3.11.09")
+    implementation("com.konghq:unirest-java:3.13.11")
 
     //javalin
     implementation("io.javalin:javalin:4.6.4")
@@ -47,6 +47,22 @@ tasks.test {
 
 tasks.withType<KotlinCompile> {
     kotlinOptions.jvmTarget = "1.8"
+}
+
+tasks.withType<Jar> {
+    // Otherwise you'll get a "No main manifest attribute" error
+    manifest {
+        attributes["Main-Class"] = "App"
+    }
+
+    duplicatesStrategy = DuplicatesStrategy.EXCLUDE
+    // To add all of the dependencies otherwise a "NoClassDefFoundError" error
+    from(sourceSets.main.get().output)
+
+    dependsOn(configurations.runtimeClasspath)
+    from({
+        configurations.runtimeClasspath.get().filter { it.name.endsWith("jar") }.map { zipTree(it) }
+    })
 }
 
 application {
