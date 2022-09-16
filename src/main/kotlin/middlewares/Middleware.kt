@@ -1,28 +1,24 @@
-package Middlewares
+package middlewares
 
-import dbutils.Auth
 import io.javalin.http.Context
-import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.Job
-import kotlinx.coroutines.launch
-import org.jetbrains.exposed.sql.select
-import org.jetbrains.exposed.sql.transactions.transaction
-import App.Companion.mongoDb
 import org.bson.Document
 import org.joda.time.DateTime
 import org.joda.time.DateTimeZone
 import org.json.JSONObject
+import org.litote.kmongo.findOne
 import org.litote.kmongo.save
-import java.math.BigInteger
 
 class Middleware {
-    private val MongoDb = mongoDb
+    private val mongoDb = App.mongoDb
     fun verify (it:Context):Boolean {
         try {
             val authUser = it.basicAuthCredentials()
-            val authVars = transaction {Auth.slice(Auth.userName, Auth.password)
-                .select { Auth.app_scope eq "portfolio"}.first()}
-            if (authUser.username == authVars[Auth.userName] && authUser.password == authVars[Auth.password]) {
+            val authVars = mongoDb.getCollection("auth")
+                .findOne { Document(mapOf("item" to "portfolio")) }
+
+            if (authUser.username == authVars?.getString("username") &&
+                authUser.password == authVars.getString("password")
+            ) {
                 return true
             }
             return false
@@ -30,11 +26,11 @@ class Middleware {
             return false
         }
     }
-    suspend fun requestLogging (it: Context) {
-            val col = MongoDb.getCollection("request_logs")
+    fun requestLogging (it: Context) {
+            val col = mongoDb.getCollection("request_logs")
             val currentDateTime = DateTime.now(DateTimeZone.forID("Asia/Manila"))
             val bodyMap = JSONObject(
-                if (it.body().isNullOrBlank()) {
+                if (it.body().isBlank()) {
                     it.body()
                 } else mapOf("items" to "none")
             ).toMap()

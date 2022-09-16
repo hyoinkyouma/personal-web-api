@@ -1,19 +1,17 @@
-package Services
+package services
 
 import App.Companion.mongoDb
-import Middlewares.Middleware
+import middlewares.Middleware
 import io.javalin.http.Context
-import kong.unirest.Unirest
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.launch
 import org.litote.kmongo.findOne
 import org.bson.Document
 import org.json.JSONObject
-import org.slf4j.spi.SLF4JServiceProvider
 
 class PortfolioService {
-    private val MongoDB = mongoDb
+    private val mongoDB = mongoDb
     private val portfolioCoroutineHandler = CoroutineScope(Job())
     fun getPortfolio(it:Context):String {
         portfolioCoroutineHandler.launch{
@@ -21,7 +19,7 @@ class PortfolioService {
         }
         return try {
             JSONObject(
-                MongoDB.getCollection("portfolio")
+                mongoDB.getCollection("portfolio")
                     .findOne(Document(mapOf(
                         "item" to "portfolio"
                     )))).getJSONObject("value").toString()
@@ -36,7 +34,7 @@ class PortfolioService {
         val jsonBody = JSONObject(it.body())
 
         if (it.body().isNotEmpty()) {
-            val col = MongoDB.getCollection("portfolio")
+            val col = mongoDB.getCollection("portfolio")
 
             portfolioCoroutineHandler.launch {
                 Middleware().requestLogging(it)

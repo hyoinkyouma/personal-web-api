@@ -1,4 +1,4 @@
-import Routes.ServiceRoutes
+import routes.ServiceRoutes
 import dbutils.DBConnection
 import dbutils.Requests
 import com.mongodb.client.MongoDatabase
@@ -7,7 +7,6 @@ import io.javalin.Javalin
 import io.github.cdimascio.dotenv.dotenv
 import io.javalin.apibuilder.ApiBuilder
 import io.javalin.core.util.Header
-import io.javalin.http.HttpResponseException
 import kong.unirest.Unirest
 import org.jetbrains.exposed.sql.Database
 import org.jetbrains.exposed.sql.SchemaUtils
@@ -77,7 +76,7 @@ class App {
         initMongo()
         initJavalin()
         initializeUnirest()
-        initDb()
+      //  initDb()
 
     }
     }

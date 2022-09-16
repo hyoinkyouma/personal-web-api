@@ -10,7 +10,7 @@ object DBConnection {
     fun init() {
         val config = HikariConfig()
         config.jdbcUrl =
-            "jdbc:pgsql://${System.getenv("NODE_DB_HOST") ?: dotenv!!.get("NODE_DB_HOST")}:${System.getenv("NODE_DB_PORT") ?: dotenv!!.get("NODE_DB_PORT")}/${System.getenv("NODE_DB_NAME") ?: dotenv!!.get("NODE_DB_NAME")}?sslMode=Require"
+            "jdbc:pgsql://${System.getenv("DATABASE_URL") ?: dotenv!!.get("DATABASE_URL")}?sslMode=Require"
         config.connectionTimeout = 30_000
         config.maxLifetime = 1_800_000
         config.idleTimeout = 600_000
