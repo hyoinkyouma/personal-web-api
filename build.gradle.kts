@@ -35,7 +35,7 @@ dependencies {
     implementation("org.json:json:20220320")
 
     //mongo
-    implementation("org.litote.kmongo:kmongo:4.7.0")
+    implementation("org.litote.kmongo:kmongo:4.7.1")
 
     //env
     implementation("io.github.cdimascio:dotenv-kotlin:6.3.1")
@@ -68,5 +68,4 @@ tasks.withType<Jar> {
 application {
     // Define the main class for the application.
     mainClass.set("AppKt")
-    mainClassName = "App"
 }
