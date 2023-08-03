@@ -8,7 +8,6 @@ import io.javalin.http.Context
 import org.json.JSONObject
 
 class ServiceRoutes {
-    private val m = Middleware()
     private val portfolioService = PortfolioService()
 
     fun start () {
@@ -17,29 +16,16 @@ class ServiceRoutes {
         }
 
         ApiBuilder.get("/getPortfolio") {
-            val isValid = m.verify(it)
-            if (isValid) it.result(portfolioService.getPortfolio(it))
-            else respondFailed(it)
+            it.result(portfolioService.getPortfolio(it))
         }
 
         ApiBuilder.post("/sendPortfolio") {
-            val isValid =  m.verify(it)
-            if (isValid) it.result(portfolioService.sendPortfolio(it))
-            else respondFailed(it)
+            it.result(portfolioService.sendPortfolio(it))
         }
 
         ApiBuilder.post("/removePortfolio") {
-            val isValid = m.verify(it)
-            if (isValid) it.result(portfolioService.removePorfolio(it))
-            else respondFailed(it)
+            it.result(portfolioService.removePorfolio(it))
         }
 
     }
-
-    private fun respondFailed(it:Context) {
-        it.result(JSONObject(mapOf("Error" to "You will not pass")).toString())
-        it.status(403)
-    }
-
-
 }
