@@ -8,10 +8,12 @@ import io.github.cdimascio.dotenv.dotenv
 import io.javalin.apibuilder.ApiBuilder
 import io.javalin.core.util.Header
 import kong.unirest.Unirest
+import middlewares.Middleware
 import org.jetbrains.exposed.sql.Database
 import org.jetbrains.exposed.sql.SchemaUtils
 import org.jetbrains.exposed.sql.transactions.transaction
 import org.litote.kmongo.KMongo
+import services.TestServices
 
 class App {
 
@@ -73,9 +75,11 @@ class App {
 
 
     @JvmStatic fun main(args: Array<String>) {
+
         initMongo()
         initJavalin()
         initializeUnirest()
+        TestServices().generateKeyFile(null)
       //  initDb()
 
     }

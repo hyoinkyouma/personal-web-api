@@ -15,3 +15,7 @@ build
 
 # Ignore generated checklist in temp folder
 /temp/
+
+#keys
+public.key
+private.key

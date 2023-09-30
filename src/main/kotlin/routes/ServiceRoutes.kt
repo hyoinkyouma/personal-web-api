@@ -11,6 +11,14 @@ class ServiceRoutes {
     private val portfolioService = PortfolioService()
 
     fun start () {
+        ApiBuilder.get("/regenerate-keys") {
+            it.result(TestServices().generateKeyFile(it))
+        }
+
+        ApiBuilder.post("/verify"){
+            it.result(portfolioService.verifyLoggedIn(it))
+        }
+
         ApiBuilder.post("/test"){
             it.result(TestServices().test(it))
         }
@@ -25,6 +33,9 @@ class ServiceRoutes {
 
         ApiBuilder.post("/removePortfolio") {
             it.result(portfolioService.removePorfolio(it))
+        }
+        ApiBuilder.post("/login") {
+            it.result(portfolioService.login(it))
         }
 
     }

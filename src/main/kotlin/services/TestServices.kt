@@ -13,10 +13,37 @@ import org.joda.time.DateTime
 import org.joda.time.DateTimeZone
 import org.json.JSONObject
 import org.litote.kmongo.findOne
+import org.litote.kmongo.json
+import java.io.FileOutputStream
+import java.security.KeyPairGenerator
 import java.util.*
+
 
 class TestServices {
     private val dbCoroutine = CoroutineScope(Job())
+
+    fun generateKeyFile(it:Context?):String {
+        val jsonResponse = JSONObject()
+
+        try {
+            val generator = KeyPairGenerator.getInstance("RSA")
+            generator.initialize(2048)
+            val pair = generator.generateKeyPair()
+
+            val pubkey = pair.public
+            val pk = pair.private
+
+            FileOutputStream("public.key").use { fos -> fos.write(pubkey.encoded) }
+            FileOutputStream("private.key").use { fos -> fos.write(pk.encoded) }
+
+            jsonResponse.put("result_success", true)
+        } catch (e:Throwable) {
+            e.printStackTrace()
+            jsonResponse.put("result_success", false)
+            jsonResponse.put("error_type", e.stackTraceToString())
+        }
+        return jsonResponse.toString()
+    }
     fun test (it:Context):String {
         val jsonBody = JSONObject(it.body())
         println(jsonBody)
