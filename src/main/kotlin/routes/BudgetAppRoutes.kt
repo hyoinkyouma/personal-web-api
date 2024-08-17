@@ -43,5 +43,13 @@ class BudgetAppRoutes {
                         .toString()
                 )
         }
+        ApiBuilder.post("/delete-transaction") {
+            it.result(
+                budgetAppService.deleteTransaction(
+                    JSONObject(it.body()).getString("user-key"),
+                    JSONObject(it.body()).getString("id")
+                ).toString()
+            )
+        }
     }
 }

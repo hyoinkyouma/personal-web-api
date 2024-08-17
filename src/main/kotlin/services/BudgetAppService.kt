@@ -2,15 +2,14 @@ package services
 
 import App.Companion.mongoDb
 import org.bson.Document
-import org.eclipse.jetty.util.ajax.JSON
 import org.joda.time.DateTime
 import org.joda.time.DateTimeZone
 import org.json.JSONArray
 import org.json.JSONObject
 import org.litote.kmongo.findOne
 import java.math.BigDecimal
-import java.util.TimeZone
 import java.util.UUID
+import java.util.UUID.randomUUID
 
 class BudgetAppService {
     private val usersCollection = mongoDb.getCollection("budget-users")
@@ -18,6 +17,24 @@ class BudgetAppService {
     private val budgetBalanceCollection = mongoDb.getCollection("budget-balance")
     private val budgetUserSettingsCollection = mongoDb.getCollection("budget-user-settings")
     private data class LoginInfo (val username:String, val password:String)
+
+    fun deleteTransaction(userKey: String, uuid:String):JSONObject {
+        val response = JSONObject()
+        response.put("user-key", userKey)
+        
+        return try {
+            val result = budgetTransactionCollection.deleteOne(Document(mapOf("user-key" to userKey, "id" to uuid)))
+            if (result.wasAcknowledged()) {
+                response.put("success", true)
+            } else{
+                response.put("success", false)
+            }
+            response
+        } catch (e:Throwable) {
+            response.put("success", false)
+            response
+        }
+    }
 
     fun getTransactions(userKey: String):JSONObject? {
         val response = JSONObject()
@@ -61,7 +78,7 @@ class BudgetAppService {
                 )
             ))
         } else  {
-            val currentBalance = balanceDoc.get("balance").toString().toBigDecimalOrNull()
+            val currentBalance = balanceDoc["balance"].toString().toBigDecimalOrNull()
             return if (currentBalance == null) {
                 null
             } else {
@@ -84,7 +101,7 @@ class BudgetAppService {
                 "date-created" to DateTime.now(DateTimeZone.forID("Asia/Manila"))
             ))))
         } else {
-            val currentBalance = balanceDoc.get("balance").toString().toBigDecimalOrNull()
+            val currentBalance = balanceDoc["balance"].toString().toBigDecimalOrNull()
             return if (currentBalance == null) {
                 null
             } else {
@@ -108,8 +125,9 @@ class BudgetAppService {
         val description = transactionJSON.optString("description")
 
         if (type.lowercase() == "deposit") {
-            val inserTransactionResult = budgetTransactionCollection.insertOne(
+            val insertTransactionResult = budgetTransactionCollection.insertOne(
                 Document(mapOf(
+                    "id" to randomUUID(),
                     "type" to type,
                     "amount" to amount,
                     "user-key" to userKey,
@@ -117,7 +135,7 @@ class BudgetAppService {
                     "description" to description
                 ))
             )
-            if (inserTransactionResult.wasAcknowledged()) {
+            if (insertTransactionResult.wasAcknowledged()) {
                 addBalance(userKey, amount)
                 response.put("success", true)
                 response.put("code", "200")
@@ -129,6 +147,7 @@ class BudgetAppService {
         } else {
             val inserTransactionResult = budgetTransactionCollection.insertOne(
                 Document(mapOf(
+                    "id" to randomUUID(),
                     "type" to type,
                     "amount" to amount,
                     "user-key" to userKey,

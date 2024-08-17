@@ -32,7 +32,7 @@ dependencies {
     implementation("org.slf4j:slf4j-simple:2.0.0")
 
     //JSON
-    implementation("org.json:json:20220320")
+    implementation("org.json:json:20231013")
 
     //mongo
     implementation("org.litote.kmongo:kmongo:4.7.1")
