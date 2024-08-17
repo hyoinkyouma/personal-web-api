@@ -13,6 +13,7 @@ import org.jetbrains.exposed.sql.Database
 import org.jetbrains.exposed.sql.SchemaUtils
 import org.jetbrains.exposed.sql.transactions.transaction
 import org.litote.kmongo.KMongo
+import routes.BudgetAppRoutes
 import services.TestServices
 
 class App {
@@ -66,6 +67,9 @@ class App {
                         it.header(Header.ACCESS_CONTROL_ALLOW_METHODS, "GET, POST")
                     }
                     ServiceRoutes().start()
+                    ApiBuilder.path("/financial"){
+                        BudgetAppRoutes().start()
+                    }
                 }
             }
         }
@@ -74,14 +78,16 @@ class App {
 
 
 
-    @JvmStatic fun main(args: Array<String>) {
-
+    @JvmStatic
+    fun main(args: Array<String>) {
         initMongo()
+        mongoDb.createCollection("budget")
+        mongoDb.createCollection("budget-users")
+        mongoDb.createCollection("budget-balance")
+        mongoDb.createCollection("budget-user-settings")
         initJavalin()
         initializeUnirest()
         TestServices().generateKeyFile(null)
-      //  initDb()
-
     }
     }
 }

@@ -14,8 +14,8 @@ object DBConnection {
         config.connectionTimeout = 30_000
         config.maxLifetime = 1_800_000
         config.idleTimeout = 600_000
-        config.username = System.getenv("NODE_DB_USERNAME") ?: dotenv!!.get("NODE_DB_USERNAME").toString()
-        config.password = System.getenv("NODE_DB_PASSWORD") ?: dotenv!!.get("NODE_DB_PASSWORD").toString()
+        config.username = System.getenv("DB_USERNAME") ?: dotenv!!.get("DB_USERNAME").toString()
+        config.password = System.getenv("DB_PASSWORD") ?: dotenv!!.get("DB_PASSWORD").toString()
 
         db = HikariDataSource(config)
     }
