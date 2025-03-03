@@ -13,7 +13,6 @@ import io.github.davidepianca98.mqtt.packets.mqtt.MQTTPublish
 import io.javalin.apibuilder.ApiBuilder
 import io.javalin.core.util.Header
 import kong.unirest.Unirest
-import middlewares.Middleware
 import org.jetbrains.exposed.sql.Database
 import org.jetbrains.exposed.sql.SchemaUtils
 import org.jetbrains.exposed.sql.transactions.transaction

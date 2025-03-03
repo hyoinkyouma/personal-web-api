@@ -50,7 +50,7 @@ tasks.test {
 }
 
 tasks.withType<KotlinCompile> {
-    kotlinOptions.jvmTarget = "21"
+    kotlinOptions.jvmTarget = "17"
 }
 
 tasks.withType<Jar> {
@@ -70,8 +70,8 @@ tasks.withType<Jar> {
 }
 
 java {
-    sourceCompatibility = JavaVersion.VERSION_21
-    targetCompatibility = JavaVersion.VERSION_21
+    sourceCompatibility = JavaVersion.VERSION_17
+    targetCompatibility = JavaVersion.VERSION_17
 }
 kotlin {
     compilerOptions {
