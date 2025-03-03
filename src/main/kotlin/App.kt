@@ -43,7 +43,7 @@ class App {
         }
 
         private fun initMqttBroker() {
-            mqttBroker = Broker(port = 1883,webSocketPort = 1884, packetInterceptor = object : PacketInterceptor {
+            mqttBroker = Broker(port = 1883,webSocketPort = 1884,enableUdp = true, packetInterceptor = object : PacketInterceptor {
                 override fun packetReceived(clientId: String, username: String?, password: UByteArray?, packet: MQTTPacket) {
                     when (packet) {
                         is MQTTConnect -> println(packet.protocolName)
@@ -57,6 +57,8 @@ class App {
             }).also {
                 it.listen()
             }
+            println("MQTT Broker: SERVICE STARTED")
+
         }
 
         private fun initializeUnirest() {
