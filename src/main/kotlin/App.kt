@@ -5,6 +5,11 @@ import com.mongodb.client.MongoDatabase
 import dbutils.Auth
 import io.javalin.Javalin
 import io.github.cdimascio.dotenv.dotenv
+import io.github.davidepianca98.mqtt.broker.Broker
+import io.github.davidepianca98.mqtt.broker.interfaces.PacketInterceptor
+import io.github.davidepianca98.mqtt.packets.MQTTPacket
+import io.github.davidepianca98.mqtt.packets.mqtt.MQTTConnect
+import io.github.davidepianca98.mqtt.packets.mqtt.MQTTPublish
 import io.javalin.apibuilder.ApiBuilder
 import io.javalin.core.util.Header
 import kong.unirest.Unirest
@@ -23,6 +28,7 @@ class App {
         private  val Port:Int = System.getenv("PORT")?.toInt() ?: dotenv!!.get("PORT").toInt()
         lateinit var mongoDb:MongoDatabase
         lateinit var db: Database
+        lateinit var mqttBroker: Broker
 
         private fun initMongo () {
             mongoDb = KMongo.createClient(System.getenv("MongoString") ?: dotenv!!.get("MongoString")).getDatabase("personal")
@@ -34,6 +40,23 @@ class App {
             this.db = Database.connect(DBConnection.db)
             transaction {
                 SchemaUtils.create(Requests, Auth)
+            }
+        }
+
+        private fun initMqttBroker() {
+            mqttBroker = Broker(webSocketPort = 1884, packetInterceptor = object : PacketInterceptor {
+                override fun packetReceived(clientId: String, username: String?, password: UByteArray?, packet: MQTTPacket) {
+                    when (packet) {
+                        is MQTTConnect -> println(packet.protocolName)
+                        is MQTTPublish -> {
+                            if (packet.topicName == "test"){
+                                println("Test Topic Payload:${packet.payload}")
+                            }
+                        }
+                    }
+                }
+            }).also {
+                it.listen()
             }
         }
 
@@ -88,6 +111,7 @@ class App {
         initJavalin()
         initializeUnirest()
         TestServices().generateKeyFile(null)
+        initMqttBroker()
     }
     }
 }

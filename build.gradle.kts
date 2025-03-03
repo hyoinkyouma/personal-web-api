@@ -1,7 +1,7 @@
 import org.jetbrains.kotlin.gradle.tasks.KotlinCompile
 
 plugins {
-    kotlin("jvm") version "1.6.20"
+    kotlin("jvm") version "2.1.0"
     application
 }
 
@@ -39,6 +39,10 @@ dependencies {
 
     //env
     implementation("io.github.cdimascio:dotenv-kotlin:6.3.1")
+
+    //mqtt
+    implementation("io.github.davidepianca98:kmqtt-common:1.0.0")
+    implementation("io.github.davidepianca98:kmqtt-broker:1.0.0")
 }
 
 tasks.test {
@@ -46,7 +50,7 @@ tasks.test {
 }
 
 tasks.withType<KotlinCompile> {
-    kotlinOptions.jvmTarget = "1.8"
+    kotlinOptions.jvmTarget = "21"
 }
 
 tasks.withType<Jar> {

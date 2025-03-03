@@ -145,7 +145,7 @@ class BudgetAppService {
             }
 
         } else {
-            val inserTransactionResult = budgetTransactionCollection.insertOne(
+            val insertTransactionResult = budgetTransactionCollection.insertOne(
                 Document(mapOf(
                     "id" to randomUUID(),
                     "type" to type,
@@ -155,7 +155,7 @@ class BudgetAppService {
                     "description" to description
                 ))
             )
-            if (inserTransactionResult.wasAcknowledged()) {
+            if (insertTransactionResult.wasAcknowledged()) {
                 deductBalance(userKey, amount)
                 response.put("success", true)
                 response.put("code", "200")
