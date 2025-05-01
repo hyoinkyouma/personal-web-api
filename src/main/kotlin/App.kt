@@ -82,7 +82,19 @@ class App {
                 this._conf.enableCorsForAllOrigins()
                 this._conf.enableHttpAllowedMethodsOnRoutes()
                 this._conf.enableDevLogging()
-                
+                // Ensure directory exists in development mode
+
+                val dir = File(staticFilesDir)
+                if (!dir.exists()) {
+                    dir.mkdir()
+                    println("Created directory: ${dir.absolutePath}")
+                }
+
+                val portfolioImagesDir = File("$staticFilesDir/portfolio-images")
+                if (!portfolioImagesDir.exists()) {
+                    portfolioImagesDir.mkdir()
+                    println("Created directory: ${portfolioImagesDir.absolutePath}")
+                }
                 // Configure static files handling
                 // The external location flag ensures files are loaded from the file system
                 // addStaticFiles handles the directory as the web root
@@ -108,18 +120,7 @@ class App {
                 } else {
                     println("Running in development mode locally")
                     
-                    // Ensure directory exists in development mode
-                    val dir = File(staticFilesDir)
-                    if (!dir.exists()) {
-                        dir.mkdir()
-                        println("Created directory: ${dir.absolutePath}")
-                    }
-                    
-                    val portfolioImagesDir = File("$staticFilesDir/portfolio-images")
-                    if (!portfolioImagesDir.exists()) {
-                        portfolioImagesDir.mkdir()
-                        println("Created directory: ${portfolioImagesDir.absolutePath}")
-                    }
+
                 }
             }.start(Port)
             
