@@ -140,8 +140,8 @@ class PortfolioService {
         try {
             // Determine if we're running on Railway (production) or locally
             val isProduction = System.getenv("RAILWAY_ENVIRONMENT_NAME") != null
-            val rootDir = if (isProduction) "/resources" else "images"
-            val baseDir = "$rootDir/portfolio-images"
+            val rootDir = if (isProduction) System.getenv("RAILWAY_VOLUME_MOUNT_PATH") else "images"
+            val baseDir = if (isProduction) rootDir else "$rootDir/portfolio-images"
             
             // Create directory if it doesn't exist
             val imageDir = File(baseDir)
