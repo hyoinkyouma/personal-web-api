@@ -12,6 +12,9 @@ import io.github.davidepianca98.mqtt.packets.mqtt.MQTTConnect
 import io.github.davidepianca98.mqtt.packets.mqtt.MQTTPublish
 import io.javalin.apibuilder.ApiBuilder
 import io.javalin.core.util.Header
+import io.javalin.core.util.FileUtil
+import io.javalin.http.staticfiles.Location
+import java.io.File
 import kong.unirest.Unirest
 import org.jetbrains.exposed.sql.Database
 import org.jetbrains.exposed.sql.SchemaUtils
@@ -24,7 +27,7 @@ class App {
 
     companion object {
         val dotenv = try {dotenv()} catch (e:Throwable) {null}
-        private  val Port:Int = System.getenv("PORT")?.toInt() ?: dotenv!!.get("PORT").toInt()
+        private val Port:Int = System.getenv("PORT")?.toInt() ?: dotenv!!.get("PORT").toInt()
         lateinit var mongoDb:MongoDatabase
         lateinit var db: Database
         lateinit var mqttBroker: Broker
@@ -70,18 +73,61 @@ class App {
         }
 
         private fun initJavalin () {
+            // Determine if we're running on Railway (production) or locally
+            val isProduction = System.getenv("RAILWAY_ENVIRONMENT_NAME") != null
+            println("Environment Prod: $isProduction")
+            val staticFilesDir = if (isProduction) "/resources" else "images"
+            
             val javalin: Javalin = Javalin.create().apply {
                 this._conf.enableCorsForAllOrigins()
                 this._conf.enableHttpAllowedMethodsOnRoutes()
                 this._conf.enableDevLogging()
-
+                
+                // Configure static files handling
+                // The external location flag ensures files are loaded from the file system
+                // addStaticFiles handles the directory as the web root
+                this._conf.addStaticFiles { staticFiles ->
+                    staticFiles.directory = staticFilesDir
+                    staticFiles.location = Location.EXTERNAL
+                    // Enable hot-reloading (no need to restart server when files change)
+                    staticFiles.hostedPath = "/"
+                    staticFiles.precompress = false
+                }
+                
+                // Also serve portfolio-images at a specific URL path
+                this._conf.addStaticFiles { staticFiles ->
+                    staticFiles.directory = "$staticFilesDir/portfolio-images"
+                    staticFiles.location = Location.EXTERNAL
+                    staticFiles.hostedPath = "/portfolio-images"
+                    staticFiles.precompress = false
+                }
+                
+                println("Static files configured from: $staticFilesDir")
+                if (isProduction) {
+                    println("Running in production mode on Railway")
+                } else {
+                    println("Running in development mode locally")
+                    
+                    // Ensure directory exists in development mode
+                    val dir = File(staticFilesDir)
+                    if (!dir.exists()) {
+                        dir.mkdir()
+                        println("Created directory: ${dir.absolutePath}")
+                    }
+                    
+                    val portfolioImagesDir = File("$staticFilesDir/portfolio-images")
+                    if (!portfolioImagesDir.exists()) {
+                        portfolioImagesDir.mkdir()
+                        println("Created directory: ${portfolioImagesDir.absolutePath}")
+                    }
+                }
             }.start(Port)
+            
             javalin.routes {
-
                 ApiBuilder.path("/v1") {
                     ApiBuilder.before {
                         it.header(Header.ACCESS_CONTROL_ALLOW_HEADERS, "Access-Control-Allow-Headers, Authorization, Origin,Accept, X-Requested-With, Content-Type, Access-Control-Request-Method, Access-Control-Request-Headers")
-
+                        
                         /*if (!it.basicAuthCredentialsExist()) {
                               it.header("WWW-Authenticate", "Basic realm=\"User Visible Realm\", charset=\"UTF-8\"")
                               throw HttpResponseException(401, "Login required")
@@ -98,22 +144,18 @@ class App {
             }
         }
 
-
-
-
-
-    @JvmStatic
-    fun main(args: Array<String>) {
-        initMongo()
-        mongoDb.createCollection("budget")
-        mongoDb.createCollection("budget-users")
-        mongoDb.createCollection("budget-balance")
-        mongoDb.createCollection("budget-user-settings")
-        initJavalin()
-        initializeUnirest()
-        TestServices().generateKeyFile(null)
-        initMqttBroker()
-    }
+        @JvmStatic
+        fun main(args: Array<String>) {
+            initMongo()
+            mongoDb.createCollection("budget")
+            mongoDb.createCollection("budget-users")
+            mongoDb.createCollection("budget-balance")
+            mongoDb.createCollection("budget-user-settings")
+            initJavalin()
+            initializeUnirest()
+            TestServices().generateKeyFile(null)
+            initMqttBroker()
+        }
     }
 }
 

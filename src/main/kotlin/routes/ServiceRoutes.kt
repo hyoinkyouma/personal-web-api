@@ -34,6 +34,11 @@ class ServiceRoutes {
         ApiBuilder.post("/removePortfolio") {
             it.result(portfolioService.removePorfolio(it))
         }
+        
+        ApiBuilder.post("/upload-project-images") {
+            it.result(portfolioService.uploadProjectImages(it))
+        }
+        
         ApiBuilder.post("/login") {
             it.result(portfolioService.login(it))
         }

@@ -19,3 +19,6 @@ build
 #keys
 public.key
 private.key
+
+# Ignore uploaded images
+/images/
