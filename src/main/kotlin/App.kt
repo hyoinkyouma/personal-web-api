@@ -16,6 +16,8 @@ import io.javalin.core.util.FileUtil
 import io.javalin.http.staticfiles.Location
 import java.io.File
 import kong.unirest.Unirest
+import okhttp3.OkHttpClient
+import okhttp3.Request
 import org.jetbrains.exposed.sql.Database
 import org.jetbrains.exposed.sql.SchemaUtils
 import org.jetbrains.exposed.sql.transactions.transaction
@@ -31,6 +33,8 @@ class App {
         lateinit var mongoDb:MongoDatabase
         lateinit var db: Database
         lateinit var mqttBroker: Broker
+        val okHttpClient = OkHttpClient()
+
 
         private fun initMongo () {
             mongoDb = KMongo.createClient(System.getenv("MongoString") ?: dotenv!!.get("MongoString")).getDatabase("personal")
@@ -77,7 +81,9 @@ class App {
             val isProduction = System.getenv("RAILWAY_ENVIRONMENT_NAME") != null
             println("Environment Prod: $isProduction")
             val staticFilesDir = if (isProduction) "/resources" else "images"
-            
+            val baseUrlReverseProxy = System.getenv("UIADDRESS") ?: dotenv!!.get("UIADDRESS")
+            println("Reverse Proxy URL:$baseUrlReverseProxy")
+
             val javalin: Javalin = Javalin.create().apply {
                 this._conf.enableCorsForAllOrigins()
                 this._conf.enableHttpAllowedMethodsOnRoutes()
@@ -125,6 +131,7 @@ class App {
             }.start(Port)
             
             javalin.routes {
+
                 ApiBuilder.path("/v1") {
                     ApiBuilder.before {
                         it.header(Header.ACCESS_CONTROL_ALLOW_HEADERS, "Access-Control-Allow-Headers, Authorization, Origin,Accept, X-Requested-With, Content-Type, Access-Control-Request-Method, Access-Control-Request-Headers")
@@ -140,6 +147,35 @@ class App {
                     ServiceRoutes().start()
                     ApiBuilder.path("/financial"){
                         BudgetAppRoutes().start()
+                    }
+                }
+                ApiBuilder.get("/admin-page-website") {
+                    it.redirect(baseUrlReverseProxy + it.path())
+                }
+                ApiBuilder.get("/*") { ctx ->
+                    val query = ctx.queryString()?.let {"?$it" } ?: ""
+                    val targetUrl = "$baseUrlReverseProxy${ctx.path()}$query"
+                    println(targetUrl)
+
+                    val request = Request.Builder()
+                        .url(targetUrl)
+                        .get()
+                        .build()
+
+                    try {
+                        okHttpClient.newCall(request).execute().use { response ->
+                            ctx.status(response.code)
+
+                            // Set the content type if present
+                            val contentType = response.header("Content-Type") ?: "text/html"
+                            ctx.header("Content-Type", contentType)
+
+                            response.body?.bytes()?.let { 
+                                ctx.result(it)
+                            }
+                        }
+                    } catch (e: Exception) {
+                        ctx.status(502).result("Proxy error: ${e.message}")
                     }
                 }
             }

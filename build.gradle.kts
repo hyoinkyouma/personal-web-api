@@ -43,6 +43,9 @@ dependencies {
     //mqtt
     implementation("io.github.davidepianca98:kmqtt-common:1.0.0")
     implementation("io.github.davidepianca98:kmqtt-broker:1.0.0")
+
+    //reverse proxy
+    implementation("com.squareup.okhttp3:okhttp:4.12.0")
 }
 
 tasks.test {
