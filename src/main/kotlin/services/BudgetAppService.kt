@@ -74,7 +74,7 @@ class BudgetAppService {
     fun getBalance(userKey: String):JSONObject? {
         return try{
             budgetBalanceCollection.findOne { Document(mapOf("user-key" to userKey)) }.let {
-                val balance = it?.get("balance") ?: ""
+                val balance = it?.get("balance") ?: BigDecimal.ZERO
                 val newUserKey = it?.get("user-key")?: ""
                 val lastUpdated = it?.get("last-updated") ?: ""
                 return@let JSONObject(mapOf<String, String>("balance" to balance.toString(), "user-key" to newUserKey.toString(), "last-updated" to lastUpdated.toString()))
