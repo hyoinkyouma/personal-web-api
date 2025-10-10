@@ -13,6 +13,9 @@ class BudgetAppRoutes {
             it.result(response.toString())
             it.status(responseCode)
         }
+        ApiBuilder.post("/get-user") {
+            it.result(budgetAppService.getUser(JSONObject(it.body()).optString("user-key")).toString())
+        }
         ApiBuilder.post("/sign-up") {
             val response = budgetAppService.signUp(it.body())
             val responseCode = response.getInt("code")
@@ -25,14 +28,13 @@ class BudgetAppRoutes {
             it.result(response.toString())
             it.status(responseCode)
         }
-        ApiBuilder.post("/get-balance") {
-            val response = budgetAppService.getBalance(JSONObject(it.body()).getString("user-key"))
+        ApiBuilder.get("/get-balance") {
+            val response = budgetAppService.getBalance(it.queryParam("user-key") ?: "")
             if (response != null) {
-                it.result(JSONObject(mapOf("balance" to response, "success" to true)).toString())
+                it.result(response.toString())
                 it.status(200)
             } else {
-                it.result(JSONObject(mapOf("success" to false)).toString())
-                it.status(403)
+                it.status(404)
             }
         }
         ApiBuilder.post("/get-transactions") {
@@ -42,6 +44,9 @@ class BudgetAppRoutes {
                         .getString("user-key"))
                         .toString()
                 )
+        }
+        ApiBuilder.post("/set-balance") {
+            it.result(budgetAppService.setBalance(JSONObject(it.body())).toString())
         }
         ApiBuilder.post("/delete-transaction") {
             it.result(

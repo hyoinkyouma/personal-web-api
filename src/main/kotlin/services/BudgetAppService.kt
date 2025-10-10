@@ -1,15 +1,19 @@
 package services
 
 import App.Companion.mongoDb
+import com.mongodb.MongoException
+import de.undercouch.bson4jackson.types.Decimal128
 import org.bson.Document
 import org.joda.time.DateTime
 import org.joda.time.DateTimeZone
+import org.joda.time.Duration
 import org.json.JSONArray
 import org.json.JSONObject
 import org.litote.kmongo.findOne
 import java.math.BigDecimal
 import java.util.UUID
 import java.util.UUID.randomUUID
+import javax.print.Doc
 
 class BudgetAppService {
     private val usersCollection = mongoDb.getCollection("budget-users")
@@ -43,7 +47,18 @@ class BudgetAppService {
             val transactionArray = JSONArray()
             val transactions = budgetTransactionCollection.find(Document(mapOf("user-key" to userKey)))
             transactions.forEach {
-                transactionArray.put(JSONObject(it))
+                transactionArray.put(
+                    JSONObject(
+                        mapOf<String, String>(
+                            "description" to it["description"].toString(),
+                            "amount" to it["amount"].toString(),
+                            "type" to it["type"].toString(),
+                            "date-created" to it["date-created"].toString(),
+                            "user-key" to it["user-key"].toString(),
+                            "_id" to it["_id"].toString()
+
+                        )
+                    ))
             }
             response.put("code", 200)
             response.put("success", true)
@@ -56,11 +71,16 @@ class BudgetAppService {
         }
     }
 
-    fun getBalance(userKey: String):BigDecimal? {
+    fun getBalance(userKey: String):JSONObject? {
         return try{
-            val balanceDoc = JSONObject(budgetBalanceCollection.findOne { Document(mapOf("user-key" to userKey)) })
-            balanceDoc.getBigDecimal("balance")
-        } catch (_:Throwable) {
+            budgetBalanceCollection.findOne { Document(mapOf("user-key" to userKey)) }.let {
+                val balance = it?.get("balance") ?: ""
+                val newUserKey = it?.get("user-key")?: ""
+                val lastUpdated = it?.get("last-updated") ?: ""
+                return@let JSONObject(mapOf<String, String>("balance" to balance.toString(), "user-key" to newUserKey.toString(), "last-updated" to lastUpdated.toString()))
+            }
+        } catch (e:Throwable) {
+            e.printStackTrace()
             null
         }
     }
@@ -73,7 +93,7 @@ class BudgetAppService {
                     mapOf(
                         "balance" to amount.toString(),
                         "user-key" to userKey,
-                        "date-created" to DateTime.now(DateTimeZone.forID("Asia/Manila"))
+                        "date-created" to DateTime.now(DateTimeZone.forID("Asia/Manila")).toString()
                     )
                 )
             ))
@@ -87,7 +107,7 @@ class BudgetAppService {
                 JSONObject(budgetBalanceCollection.insertOne(Document(mapOf(
                     "balance" to newBalance.toString(),
                     "user-key" to userKey,
-                    "date-created" to DateTime.now(DateTimeZone.forID("Asia/Manila"))
+                    "date-created" to DateTime.now(DateTimeZone.forID("Asia/Manila")).toString()
                 ))))
             }
     }
@@ -120,7 +140,7 @@ class BudgetAppService {
         val transactionJSON = JSONObject(transactionString)
         val type = transactionJSON.optString("type")
         val amount = transactionJSON.getBigDecimal("amount")
-        val userKey = transactionJSON.optString("user-key")
+        val userKey = transactionJSON.getString("user-key")
         val dateCreated = transactionJSON.optString("date-created").ifBlank { DateTime.now(DateTimeZone.forID("Asia/Manila")) }
         val description = transactionJSON.optString("description")
 
@@ -147,11 +167,11 @@ class BudgetAppService {
         } else {
             val insertTransactionResult = budgetTransactionCollection.insertOne(
                 Document(mapOf(
-                    "id" to randomUUID(),
+                    "id" to UUID.randomUUID().toString(),
                     "type" to type,
                     "amount" to amount,
                     "user-key" to userKey,
-                    "date-created" to dateCreated,
+                    "date-created" to dateCreated.toString(),
                     "description" to description
                 ))
             )
@@ -199,11 +219,12 @@ class BudgetAppService {
             null
         }
 
+    fun getUser (userKey:String):JSONObject? = try { JSONObject(usersCollection.findOne{Document(mapOf<String, String>("key" to userKey))}) } catch (e:Throwable) { e.printStackTrace(); null }
 
     fun login (loginInfoString:String):JSONObject {
         val response = JSONObject()
         val loginInfoStringJSON = JSONObject(loginInfoString)
-        if (loginInfoStringJSON.optBoolean("use-key", false)) {
+        if (loginInfoStringJSON.optBoolean("user-key", false)) {
             val userdata = loginWithKey(loginInfoStringJSON.getString("key")) ?: JSONObject()
             if (!userdata.isEmpty) {
                 response.put("success", true)
@@ -215,11 +236,17 @@ class BudgetAppService {
             response.put("code", "403")
             return response
         }
-        val loginInfo = LoginInfo(
-            username = loginInfoStringJSON.getString("email"),
-            password = loginInfoStringJSON.getString("password")
-        )
+        if (loginInfoStringJSON.getString("email").isNullOrBlank() || loginInfoStringJSON.getString("password").isNullOrBlank()) {
+            response.put("success", false)
+            response.put("code", "403")
+            response.put("msg", "Email or password is empty")
+        }
+
         try {
+            val loginInfo = LoginInfo(
+                username = loginInfoStringJSON.getString("email"),
+                password = loginInfoStringJSON.getString("password")
+            )
             usersCollection.findOne(Document(mapOf<String,String>("email" to loginInfo.username)))?.let {
                 if (it.isNotEmpty()) {
                    if (it["password"] == loginInfo.password) {
@@ -249,5 +276,46 @@ class BudgetAppService {
         }
         return response
     }
+
+    fun setBalance(request: JSONObject): Any {
+        val userKey = request.getString("user-key")
+        val balance = request.getBigDecimal("balance")
+        val response = JSONObject()
+
+        try {
+            val existing = budgetBalanceCollection.findOne(Document("user-key", userKey))
+
+            if (existing.isNullOrEmpty()) {
+                budgetBalanceCollection.insertOne(
+                    Document(mapOf(
+                        "user-key" to userKey,
+                        "balance" to balance,
+                        "last-updated" to DateTime.now().toString()
+                    ))
+                )
+            } else {
+                budgetBalanceCollection.updateOne(
+                    Document("user-key", userKey),
+                    Document("\$set", mapOf(
+                        "balance" to balance,
+                        "last-updated" to DateTime.now().toString()
+                    ))
+                )
+            }
+
+            val balanceDoc = budgetBalanceCollection.findOne(Document("user-key", userKey))
+            response.put("balance", balanceDoc?.get("balance"))
+            response.put("user-key", userKey)
+            response.put("success", true)
+
+        } catch (e: MongoException) {
+            e.printStackTrace()
+            response.put("success", false)
+            response.put("msg", "failed to update balance")
+        }
+
+        return response
+    }
+
 
 }

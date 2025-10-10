@@ -184,10 +184,10 @@ class App {
         @JvmStatic
         fun main(args: Array<String>) {
             initMongo()
-            mongoDb.createCollection("budget")
-            mongoDb.createCollection("budget-users")
-            mongoDb.createCollection("budget-balance")
-            mongoDb.createCollection("budget-user-settings")
+//            mongoDb.createCollection("budget")
+//            mongoDb.createCollection("budget-users")
+//            mongoDb.createCollection("budget-balance")
+//            mongoDb.createCollection("budget-user-settings")
             initJavalin()
             initializeUnirest()
             TestServices().generateKeyFile(null)
